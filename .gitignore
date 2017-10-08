@@ -1,0 +1,7 @@
+supervise/*
+*__pycache__*
+*.swp
+*.log
+.cache/*
+ssl*
+config.yml

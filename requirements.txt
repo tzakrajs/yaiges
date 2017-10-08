@@ -1,0 +1,6 @@
+pyyaml
+tornado
+tornroutes
+aiomysql
+pytest
+sqlalchemy

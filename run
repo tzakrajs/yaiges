@@ -1,0 +1,5 @@
+#!/bin/bash
+
+export PYTHONPATH=$PYTHONPATH:/opt/cloud-fortress
+
+./run_server.py
