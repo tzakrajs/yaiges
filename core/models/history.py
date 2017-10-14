@@ -1,0 +1,2 @@
+class NotificationHistory():
+    pass
