@@ -5,8 +5,7 @@ import tornado.web
 
 from core import route
 from core.models.namespace import get_namespace, get_namespaces
-from core.models.node import get_node, get_nodes
-from core.models.service import get_service, get_services
+from core.models.monitor import get_monitor, get_monitors
 from core.models.auth import get_user, get_users, authorize_user
 #TODO: Add checks, alerts, notifications
 
@@ -38,30 +37,16 @@ class Namespaces(tornado.web.RequestHandler):
         namespaces = get_namespaces()
         self.write(json.dumps(namespaces))
 
-@route('/api/services')
-class Services(tornado.web.RequestHandler):
-    def get(self, service_name):
-        """Returns all services visible to the requestor""" 
-        service = get_service(service_name)
-        self.write(json.dumps(service))
+@route('/api/monitors')
+class Monitors(tornado.web.RequestHandler):
+    def get(self, monitor_name):
+        """Returns all monitors visible to the requestor""" 
+        monitors = get_monitors()
+        self.write(json.dumps(monitors))
 
-@route('/api/service/(?P<service_name>.*)', name='service_name')
-class Service(tornado.web.RequestHandler):
-    def get(self, service_name):
-        """Return service for given service_name in URI"""
-        service = get_service(service_name)
-        self.write(json.dumps(service))
-
-@route('/api/nodes')
-class Nodes(tornado.web.RequestHandler):
-    def get(self, node_name):
-        """Returns all nodes visible to the requestor""" 
-        nodes = get_nodes()
-        self.write(json.dumps(nodes))
-
-@route('/api/node/(?P<node_name>.*)', name='node_name')
-class Node(tornado.web.RequestHandler):
-    def get(self, node_name):
-        """Return node for given node_name in URI"""
-        node = get_node(node_name)
-        self.write(json.dumps(node))
+@route('/api/monitor/(?P<monitor_name>.*)', name='monitor_name')
+class Monitor(tornado.web.RequestHandler):
+    def get(self, monitor_name):
+        """Return monitor for given monitor_name in URI"""
+        monitor = get_monitor(monitor_name)
+        self.write(json.dumps(monitor))
