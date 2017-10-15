@@ -6,9 +6,16 @@ from core.models.escalation import EscalationPolicy
 from core.models.exceptions import AlreadyExists
 from core.models.history import NotificationHistory
 from core.models.monitor import Monitor
-from core.models.persistence import Inventory, recall, save, link, unlink
+from core.models.persistence import recall, save, link, unlink, RemoteEntity
 
-class Namespace(PersistedObject):
+class Inventory(RemoteEntity):
+    """Container of containers"""
+    
+    def _compatible_with(self, target_object):
+        # Make sure we are only linking one of the following types
+        assert isinstance(target_object, Namespace)
+
+class Namespace(RemoteEntity):
     """An isolated collection of monitors, policies, contact groups
     and history.
     
@@ -32,6 +39,7 @@ async def get_namespace(name):
     return ns
 
 def get_namespaces():
+    
     pass
 
 # Tests

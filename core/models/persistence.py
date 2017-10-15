@@ -1,10 +1,32 @@
 from functools import wraps
 
-from core.models.mysql import MySQL
+from core.models.mysql import get_mysql
 from core.models.exceptions import AlreadyExists
 
-class Inventory():
-    pass
+class RemoteEntity():
+    metadata = {}
+    """A simple unit for persisting state remotely"""
+    async def save(self, **kwargs):
+        """Persist this namespace's metadata"""
+        # Get overwrite argument, default to False
+        overwrite = kwargs.get('overwrite', False)
+        # Save the change to the persistence module
+        await save(self, overwrite=overwrite)
+
+    async def link(self, target_object):
+        """Links a target object to this namespace"""
+        # Check compatibility with target object
+        self._compatible_with(target_object)
+        # Link the target object to this namespace
+        await link(self, target_object)
+
+    async def unlink(self, target_object):
+        """Links a target object to this namespace"""
+        # Check compatibility with target object
+        self._compatible_with(target_object)
+        # Link the target object to this namespace
+        await unlink(self, target_object)
+
 
 def _container_pair(container, item, reverse=False):
     """Creates a tuple of container and item types and names"""
@@ -26,11 +48,8 @@ def _item_triplet(item):
 def persistence(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
-        kwargs['pm'] = await MySQL()
-        try:
-            return await func(*args, **kwargs)
-        finally:
-            kwargs['pm'].destroy()
+        kwargs['pm'] = await get_mysql()
+        return await func(*args, **kwargs)
     return wrapper
 
 @persistence
