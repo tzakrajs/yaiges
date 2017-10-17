@@ -137,6 +137,8 @@ class MySQL():
                 await transaction.rollback()
             else:
                 await transaction.commit()
+            finally:
+                transaction.close()
         finally:
             await conn.close()
 
@@ -166,7 +168,8 @@ class MySQL():
             else:
                 await transaction.commit()
         finally:
-            await conn.close()
+            pass
+            #await conn.close()
 
     async def delete(self, item):
         item_id = item.id
@@ -203,6 +206,8 @@ class MySQL():
                 await transaction.rollback()
             else:
                 await transaction.commit()
+            finally:
+                await transaction.close()
         finally:
             await conn.close()
 
