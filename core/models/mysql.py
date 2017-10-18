@@ -54,11 +54,11 @@ async def get_mysql():
     global metadata
     if not engine:
         engine = await create_engine(**CREDS)
+    mysql = MySQL()
+    mysql._init(engine)
     if not tables:
         tables = _tables()
         _create_all_tables(metadata)
-    mysql = MySQL()
-    mysql._init(engine)
     return mysql
 
 class MySQL():
@@ -81,8 +81,11 @@ class MySQL():
         item.id = rows[0][0]
         item.name = rows[0][1]
         item.metadata = json.loads(rows[0][2])
-        await conn.close()
+        conn.connection.close()
+        await conn.connection.ensure_closed()
+        engine._pool.release(conn.connection)
         item.links = await self.get_links(item)
+        return rows
 
     async def get_links(self, item):
         item_id = item.id
@@ -99,6 +102,9 @@ class MySQL():
             if not links.get(target_type):
                 links[target_type] = []
             links[target_type].append(target_id)
+        conn.connection.close()
+        await conn.connection.ensure_closed()
+        engine._pool.release(conn.connection)
         return links
 
     async def check_link(self, item, target):
@@ -112,7 +118,9 @@ class MySQL():
         conn = await engine.acquire()
         res = await conn.execute(link_table.select().where(link_table.c.target_type==target_type).where(link_table.c.target_id==target_id))
         rows = [row for row in res]
-        await conn.close()
+        conn.connection.close()
+        await conn.connection.ensure_closed()
+        engine._pool.release(conn.connection)
         return rows
 
     async def link(self, item, target):
@@ -140,7 +148,9 @@ class MySQL():
             finally:
                 transaction.close()
         finally:
-            await conn.close()
+            conn.connection.close()
+            await conn.connection.ensure_closed()
+            engine._pool.release(conn.connection)
 
     async def save(self, item, **kwargs):
         # First try to see if this item exists
@@ -168,8 +178,9 @@ class MySQL():
             else:
                 await transaction.commit()
         finally:
-            pass
-            #await conn.close()
+            conn.connection.close()
+            await conn.connection.ensure_closed()
+            engine._pool.release(conn.connection)
 
     async def delete(self, item):
         item_id = item.id
@@ -187,7 +198,9 @@ class MySQL():
             else:
                 await transaction.commit()
         finally:
-            await conn.close()
+            conn.connection.close()
+            await conn.connection.ensure_closed()
+            engine._pool.release(conn.connection)
 
     async def create(self, item):
         item_name = item.name
@@ -209,7 +222,9 @@ class MySQL():
             finally:
                 await transaction.close()
         finally:
-            await conn.close()
+            conn.connection.close()
+            await conn.connection.ensure_closed()
+            engine._pool.release(conn.connection)
 
     async def destroy(self):
         engine.close()
