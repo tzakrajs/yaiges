@@ -75,15 +75,16 @@ class MySQL():
         except: 
             item_name = item.name
             res = await conn.execute(table.select().where(table.c.name==item_name))
+        finally:
+            conn.connection.close()
+            await conn.connection.ensure_closed()
+            engine._pool.release(conn.connection)
         rows = [row for row in res]
         if not rows:
             return
         item.id = rows[0][0]
         item.name = rows[0][1]
         item.metadata = json.loads(rows[0][2])
-        conn.connection.close()
-        await conn.connection.ensure_closed()
-        engine._pool.release(conn.connection)
         item.links = await self.get_links(item)
         return rows
 
@@ -93,19 +94,21 @@ class MySQL():
         link_table_name = 'link_{0}'.format(item_type)
         link_table = tables[link_table_name]
         conn = await engine.acquire()
-        res = await conn.execute(link_table.select())
-        links = {}
-        for row in res:
-            link_id = row[0]
-            target_type = row[1]
-            target_id = row[2]
-            if not links.get(target_type):
-                links[target_type] = []
-            links[target_type].append(target_id)
-        conn.connection.close()
-        await conn.connection.ensure_closed()
-        engine._pool.release(conn.connection)
-        return links
+        try:
+            res = await conn.execute(link_table.select())
+            links = {}
+            for row in res:
+                link_id = row[0]
+                target_type = row[1]
+                target_id = row[2]
+                if not links.get(target_type):
+                    links[target_type] = []
+                links[target_type].append(target_id)
+            return links
+        finally:
+            conn.connection.close()
+            await conn.connection.ensure_closed()
+            engine._pool.release(conn.connection)
 
     async def check_link(self, item, target):
         # Check if an item is linked with a target item
@@ -116,12 +119,14 @@ class MySQL():
         link_table_name = 'link_{0}'.format(item_type)
         link_table = tables[link_table_name]
         conn = await engine.acquire()
-        res = await conn.execute(link_table.select().where(link_table.c.target_type==target_type).where(link_table.c.target_id==target_id))
-        rows = [row for row in res]
-        conn.connection.close()
-        await conn.connection.ensure_closed()
-        engine._pool.release(conn.connection)
-        return rows
+        try:
+            res = await conn.execute(link_table.select().where(link_table.c.target_type==target_type).where(link_table.c.target_id==target_id))
+            rows = [row for row in res]
+            return rows
+        finally:
+            conn.connection.close()
+            await conn.connection.ensure_closed()
+            engine._pool.release(conn.connection)
 
     async def link(self, item, target):
         # Link an item with a target item
@@ -153,7 +158,6 @@ class MySQL():
             engine._pool.release(conn.connection)
 
     async def save(self, item, **kwargs):
-        # First try to see if this item exists
         rows = await self.recall(item)
         if rows:
             await self.update(item)
